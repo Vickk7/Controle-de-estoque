@@ -13,14 +13,17 @@ def conectar_banco():
 # Função para criar a tabela de produtos se já não existir
 def criar_tabela(cursor):
     try:
-        cursor.execute('''CREATE TABLE IF NOT EXISTS produtos
-                (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                quantidade INTEGER NOT NULL,
-                preco REAL)''')
+        cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS produtos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        nome TEXT NOT NULL,
+                        quantidade INTEGER NOT NULL,
+                        preco REAL
+                    )
+                ''')
     except sqlite3.Error as e:
         print(f"Erro ao criar a tabela: {e}")
-
+        
 # Função para cadastrar um novo produto no estoque
 def cadastrar_produto(cursor):
     nome = input("Nome do produto: ")
