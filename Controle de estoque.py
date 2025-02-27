@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 
 # Função para conectar ou criar o banco de dados
 def conectar_banco():
@@ -10,20 +11,29 @@ def conectar_banco():
         print(f"Erro ao conectar ao banco de dados: {e}")
         return None, None
 
-# Função para criar a tabela de produtos se já não existir
-def criar_tabela(cursor):
+# Função para criar as tabelas de produtos e histórico se já não existirem
+def criar_tabelas(cursor):
     try:
         cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS produtos (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nome TEXT NOT NULL,
-                        quantidade INTEGER NOT NULL,
-                        preco REAL
-                    )
-                ''')
+            CREATE TABLE IF NOT EXISTS produtos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                quantidade INTEGER NOT NULL,
+                preco REAL
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS historico (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                produto_nome TEXT NOT NULL,
+                quantidade INTEGER NOT NULL,
+                tipo TEXT NOT NULL,
+                data_hora TEXT NOT NULL
+            )
+        ''')
     except sqlite3.Error as e:
-        print(f"Erro ao criar a tabela: {e}")
-        
+        print(f"Erro ao criar as tabelas: {e}")
+
 # Função para cadastrar um novo produto no estoque
 def cadastrar_produto(cursor):
     nome = input("Nome do produto: ")
@@ -41,9 +51,9 @@ def cadastrar_produto(cursor):
     except ValueError:
         print("Quantidade e preço devem ser números válidos. Tente novamente.")
     except sqlite3.Error as e:
-        print(f"Erro ao cadastrar {e}. Tente novamente.")
+        print(f"Erro ao cadastrar produto: {e}")
 
-# Função para egistrar a entrada de produtos no estoque
+# Função para registrar a entrada de produtos no estoque
 def registrar_entrada(cursor):
     nome = input("Nome do produto: ")
     try:
@@ -60,7 +70,13 @@ def registrar_entrada(cursor):
             cursor.execute('''
                 UPDATE produtos SET quantidade = ? WHERE nome = ?
             ''', (nova_quantidade, nome))
-            print(f"Entrada de {quantidade} unidades do produto '{nome}' registrada.")
+            # Registrar no histórico
+            data_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute('''
+                INSERT INTO historico (produto_nome, quantidade, tipo, data_hora)
+                VALUES (?, ?, 'Entrada', ?)
+            ''', (nome, quantidade, data_hora))
+            print(f"Entrada de {quantidade} unidades do produto '{nome}' registrada em {data_hora}.")
         else:
             print(f"Produto '{nome}' não encontrado no estoque.")
     except ValueError:
@@ -86,7 +102,13 @@ def registrar_saida(cursor):
                 cursor.execute('''
                     UPDATE produtos SET quantidade = ? WHERE nome = ?
                 ''', (nova_quantidade, nome))
-                print(f"Saída de {quantidade} unidades do produto '{nome}' registrada.")
+                # Registrar no histórico
+                data_hora = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute('''
+                    INSERT INTO historico (produto_nome, quantidade, tipo, data_hora)
+                    VALUES (?, ?, 'Saída', ?)
+                ''', (nome, quantidade, data_hora))
+                print(f"Saída de {quantidade} unidades do produto '{nome}' registrada em {data_hora}.")
             else:
                 print(f"Quantidade insuficiente em estoque. Apenas {resultado[0]} unidades disponíveis.")
         else:
@@ -122,19 +144,47 @@ def calcular_estoque(cursor):
     except sqlite3.Error as e:
         print(f"Erro ao calcular o estoque: {e}")
 
-# Função para gerar um relatório do estoque
+
+# Função para ver o histórico de entradas e saídas
+def ver_historico(cursor):
+    try:
+        cursor.execute('SELECT * FROM historico ORDER BY data_hora DESC')
+        registros = cursor.fetchall()
+        print("\nHistórico de Entradas e Saídas:")
+        print("{:<5} {:<20} {:<10} {:<8} {:<20}".format('ID', 'Produto', 'Quantidade', 'Tipo', 'Data/Hora'))
+        for registro in registros:
+            print("{:<5} {:<20} {:<10} {:<8} {:<20}".format(registro[0], registro[1], registro[2], registro[3], registro[4]))
+    except sqlite3.Error as e:
+        print(f"Erro ao obter o histórico: {e}")
+
+
 def gerar_relatorio(cursor):
     try:
-        cursor.execute('SELECT * FROM produtos')
-        produtos = cursor.fetchall()
         with open('relatorio_estoque.txt', 'w') as arquivo:
-            arquivo.write("Relatório de Estoque\n")
+            # Relatório do estoque atual
+            arquivo.write("=== Relatório de Estoque ===\n")
             arquivo.write("{:<5} {:<20} {:<15} {:<10}\n".format('ID', 'Nome', 'Quantidade', 'Preço'))
+            cursor.execute('SELECT * FROM produtos')
+            produtos = cursor.fetchall()
             for produto in produtos:
-                arquivo.write("{:<5} {:<20} {:<15} R${:<10.2f}\n".format(produto[0], produto[1], produto[2], produto[3] if produto[3] else 0.00))
-        print("Relatório 'relatorio_estoque.txt' gerado com sucesso.")
+                arquivo.write("{:<5} {:<20} {:<15} R${:<10.2f}\n".format(
+                    produto[0], produto[1], produto[2], produto[3] if produto[3] else 0.00))
+
+            arquivo.write("\n")  # Linha em branco para separar as seções
+
+            # Relatório do histórico de entradas e saídas
+            arquivo.write("=== Histórico de Entradas e Saídas ===\n")
+            arquivo.write("{:<5} {:<20} {:<10} {:<8} {:<20}\n".format(
+                'ID', 'Produto', 'Quantidade', 'Tipo', 'Data/Hora'))
+            cursor.execute('SELECT * FROM historico ORDER BY data_hora DESC')
+            registros = cursor.fetchall()
+            for registro in registros:
+                arquivo.write("{:<5} {:<20} {:<10} {:<8} {:<20}\n".format(
+                    registro[0], registro[1], registro[2], registro[3], registro[4]))
+            print("Relatório 'relatorio_estoque.txt' gerado com sucesso, incluindo o histórico de entradas e saídas.")
     except sqlite3.Error as e:
         print(f"Erro ao gerar relatório: {e}")
+
 
 # Função para fechar a conexão com o banco de dados
 def fechar_conexao(conn):
@@ -148,7 +198,7 @@ def fechar_conexao(conn):
 def menu_interativo():
     conn, cursor = conectar_banco()
     if conn and cursor:
-        criar_tabela(cursor)
+        criar_tabelas(cursor)
 
         while True:
             print("\n===== Controle de Estoque =====")
@@ -157,8 +207,9 @@ def menu_interativo():
             print("3. Registrar saída de produto")
             print("4. Remover produto")
             print("5. Exibir estoque atual")
-            print("6. Gerar relatório")
-            print("7. Sair")
+            print("6. Ver histórico de entradas e saídas")
+            print("7. Gerar relatório")
+            print("8. Sair")
             opcao = input("Escolha uma opção: ")
 
             if opcao == '1':
@@ -172,8 +223,10 @@ def menu_interativo():
             elif opcao == '5':
                 calcular_estoque(cursor)
             elif opcao == '6':
-                gerar_relatorio(cursor)
+                ver_historico(cursor)
             elif opcao == '7':
+                gerar_relatorio(cursor)
+            elif opcao == '8':
                 print("Saindo do sistema...")
                 fechar_conexao(conn)
                 break
