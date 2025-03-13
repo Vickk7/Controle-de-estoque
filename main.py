@@ -1,100 +1,99 @@
-import customtkinter as ctk
-from tkinter import messagebox
 import tkinter as tk
-from estoque import *
+import os
+import platform
+from controle import *
+from relatorio import *
+
+
+def abrir_pdf(caminho_pdf):
+    if platform.system() == "Windows":
+        os.startfile(caminho_pdf)
 
 
 def janela_principal():
-    # Cria a janela principal
-    janela = ctk.CTk()
-    # Define o título da janela
-    janela.title("Gerenciamento de estoque")
+    # Janela Principal
+    root_main = ctk.CTk()
+    root_main.title("Gerenciamento de Estoque")
 
     # Obtém o tamanho da tela do monitor
-    largura_tela = janela.winfo_screenwidth()
-    altura_tela = janela.winfo_screenheight()
+    largura_tela = root_main.winfo_screenwidth()
+    altura_tela = root_main.winfo_screenheight()
 
-    # Define o tamanho da janela
-    largura_janela = 600  # Largura da janela
-    altura_janela = 400  # Altura da janela
+    # Obtém o tamanho da janela
+    largura_janela = 800  # Largura da janela
+    altura_janela = 600  # Altura da janela
 
     # Calcula a posição para centralizar a janela
     pos_x = (largura_tela - largura_janela) // 2
     pos_y = (altura_tela - altura_janela) // 2
 
     # Posiciona a janela no centro da tela
-    janela.geometry(f'{largura_janela}x{altura_janela}+{pos_x}+{pos_y}')
-
-    # Define a paleta de cores da janela e o estilo padrão das fontes
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("dark-blue")
-    fonte_padrao = ("Arial", 14)
-
-    # Função para exibir informações sobre o programa
-    def mostrar_sobre():
-        messagebox.showinfo("Sobre", "Este programa é um sistema de gerenciamento de estoque desenvolvido "
-                                     "em Python. A interface foi criada com o framework CustomTkinter para "
-                                     "proporcionar uma experiência de usuário moderna e fluída.")
-
-    # Função para lidar com a seleção das opções do estoque
-    def selecionar_opcao(opcao):
-        if opcao == 1:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Cadastrar produto")
-            cadastrar_produto()
-        elif opcao == 2:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Registrar entrada de produto")
-            registrar_entrada()
-        elif opcao == 3:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Registrar saída de produto")
-            registrar_saida()
-        elif opcao == 4:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Remover produto")
-            remover_produto()
-        elif opcao == 5:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Exibir estoque atual")
-            calcular_estoque()
-        elif opcao == 6:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Ver histórico de entradas e saídas")
-            ver_historico()
-        elif opcao == 7:
-            messagebox.showinfo("Opção Selecionada", "Você selecionou: Gerar relatório")
-            gerar_relatorio()
+    root_main.geometry(f'{largura_janela}x{altura_janela}+{pos_x}+{pos_y}')
 
     def confirmar_saida():
-        resposta = messagebox.askyesno("Confirmar Saída", "Você realmente deseja sair?")
-        if resposta:
-            janela.destroy()
+        # Pergunta de confirmação
+        resposta = messagebox.askyesno("Confirmar", "Você realmente deseja sair?")
+        if resposta:  # Se o usuário clicar em "Sim"
+            root_main.destroy()  # Fecha a aplicação
 
-    # Cria a barra de menu usando tkinter
-    menu_bar = tk.Menu(janela)
+    # Funções para os menus
+    def menu_cadastrar_produto():
+        messagebox.showinfo("Cadastrar produto", "Abrindo tela de cadastro")
+        cadastrar_produto()
 
-    # Cria o menu "Estoque"
-    menu_estoque = tk.Menu(menu_bar, tearoff=0)
-    menu_estoque.add_command(label="Cadastrar produto", command=lambda: selecionar_opcao(1))
-    menu_estoque.add_command(label="Registrar entrada de produto", command=lambda: selecionar_opcao(2))
-    menu_estoque.add_command(label="Registrar saída de produto", command=lambda: selecionar_opcao(3))
-    menu_estoque.add_command(label="Remover produto", command=lambda: selecionar_opcao(4))
-    menu_estoque.add_command(label="Exibir estoque atual", command=lambda: selecionar_opcao(5))
-    menu_estoque.add_command(label="Ver histórico de entradas e saídas", command=lambda: selecionar_opcao(6))
-    menu_estoque.add_command(label="Gerar relatório", command=lambda: selecionar_opcao(7))
-    menu_bar.add_cascade(label="Menu", menu=menu_estoque)
+    def menu_registrar_saida():
+        messagebox.showinfo("Registrar as saídas", "Abrindo tela de saída de produto")
+        registrar_saida()
 
-    # Cria o menu "Sobre"
-    menu_sobre = tk.Menu(menu_bar, tearoff=0)
-    menu_sobre.add_command(label="Informações do sistema", command=mostrar_sobre)
-    menu_bar.add_cascade(label="Sobre", menu=menu_sobre)
+    def menu_registrar_entrada():
+        messagebox.showinfo("Registrar as entradas", "Abrindo tela de entrada de produto")
+        registrar_entrada()
 
-    # Cria o menu "Sair"
-    menu_sair = tk.Menu(menu_bar, tearoff=0)
-    menu_sair.add_command(label="Sair", command=confirmar_saida)
-    menu_bar.add_cascade(label="Sair", menu=menu_sair)
+    def menu_remover_produto():
+        messagebox.showinfo("Remover produto", "Abrindo tela de remoção de produto")
+        remover_produto()
 
-    # Adiciona a barra de menu à janela
-    janela.configure(menu=menu_bar)
+    def menu_relatorio_estoque():
+        relatorio_estoque()
 
-    # Cria um rótulo de boas-vindas
-    texto = ctk.CTkLabel(janela, text="Bem-vindo ao Sistema de Gerenciamento de Estoque", font=("Arial", 20, "bold"))
-    texto.pack(pady=(40, 20))
+    def menu_relatorio_venda():
+        messagebox.showinfo("Emitir as saídas e entradas", "Abrindo tela de emissão relatorio de saídas e entradas.")
+        relatorio_entrada_saida()
 
-    # Inicia o loop da interface, mantendo a janela aberta
-    janela.mainloop()
+    def menu_sobre_sistema():
+        texto_sobre = """Este sistema foi desenvolvido para gerenciar o estoque, vendas e entradas de produtos de uma empresa.
+A interface foi criada com o framework CustomTkinter para proporcionar uma experiência de usuário moderna e fluída."""
+
+        messagebox.showinfo("IFBA - Turma 1.18.1M", texto_sobre)
+
+    menubar = tk.Menu(root_main)
+
+    # Menu CADASTRAR
+    menu_cadastrar = tk.Menu(menubar, tearoff=0)
+    menu_cadastrar.add_command(label="Cadastrar", command=menu_cadastrar_produto)
+    menu_cadastrar.add_command(label="Saída", command=menu_registrar_saida)
+    menu_cadastrar.add_command(label="Entrada", command=menu_registrar_entrada)
+    menu_cadastrar.add_command(label="Remover", command=menu_remover_produto)
+    menubar.add_cascade(label="Produtos", menu=menu_cadastrar)
+
+    # Menu RELATORIO
+    menu_relatorio = tk.Menu(menubar, tearoff=0)
+    menu_relatorio.add_command(label="Estoque", command=menu_relatorio_estoque)
+    menu_relatorio.add_command(label="Saídas e entradas", command=menu_relatorio_venda)
+    menubar.add_cascade(label="Relatórios", menu=menu_relatorio)
+
+    # Menu SOBRE
+    menu_sobre = tk.Menu(menubar, tearoff=0)
+    menubar.add_command(label="Sobre", command=menu_sobre_sistema)
+
+    # Menu SAIR
+    menu_sair = tk.Menu(menubar, tearoff=0)
+    menubar.add_command(label="Sair", command=confirmar_saida)
+
+    root_main.config(menu=menubar)
+
+    root_main.mainloop()
+
+
+if __name__ == "__main__":
+    abre_janela_principal()
