@@ -3,8 +3,6 @@ from tkinter import messagebox
 import os
 import sys
 import json
-import hashlib
-from main import janela_principal
 
 # Variáveis globais
 arquivo_usuarios = 'usuarios.json'
@@ -22,7 +20,7 @@ def iniciar_janela():
     # Cria a janela de login
     janela = ctk.CTk()
     # Define o título da janela
-    janela.title("Gerenciamento de estoque")
+    janela.title("Gerenciamento de Estoque")
 
     # Obtém o tamanho da tela do monitor
     largura_tela = janela.winfo_screenwidth()
@@ -85,7 +83,7 @@ def tela_login():
     texto = ctk.CTkLabel(janela, text='Login', font=fonte_titulo)
     texto.pack(padx=10, pady=(30, 20))
 
-    entry_nome = ctk.CTkEntry(janela, placeholder_text='Login', width=300, font=fonte_padrao)
+    entry_nome = ctk.CTkEntry(janela, placeholder_text='Usuário', width=300, font=fonte_padrao)
     entry_nome.pack(padx=10, pady=10)
 
     entry_senha = ctk.CTkEntry(janela, placeholder_text='Senha', show='*', width=300, font=fonte_padrao)
@@ -105,7 +103,7 @@ def tela_login():
 
     janela.bind('<Return>', autenticar)
 
-def autenticar(event=None):
+def autenticar():
     """
     Verifica os dados do usuário e, se corretos, tenta abrir a janela principal.
     """
@@ -116,13 +114,12 @@ def autenticar(event=None):
         messagebox.showerror("Erro", "Por favor, preencha todos os campos.")
         return
 
-    senha_hash = hashlib.sha256(senha.encode()).hexdigest()
-    if nome in dados_usuarios and dados_usuarios[nome]['senha'] == senha_hash:
+    if nome in dados_usuarios and dados_usuarios[nome]['senha'] == senha:
         messagebox.showinfo("Login", "Login realizado com sucesso.")
         janela.destroy()
         try:
-            from main_teste import abre_janela_principal
-            abre_janela_principal()
+            from main import janela_principal
+            janela_principal()
         except ImportError as e:
             messagebox.showerror("Erro", f"Erro ao importar o módulo principal: {e}")
         except Exception as e:
@@ -178,8 +175,7 @@ def cadastrar_usuario():
         messagebox.showerror("Erro", "Nome de usuário já existe.")
         return
 
-    senha_hash = hashlib.sha256(senha.encode()).hexdigest()
-    dados_usuarios[nome] = {'senha': senha_hash, 'email': email}
+    dados_usuarios[nome] = {'senha': senha, 'email': email}
     salvar_dados()
     messagebox.showinfo("Sucesso", "Cadastro realizado com sucesso!")
     tela_login()
